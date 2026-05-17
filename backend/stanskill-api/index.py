@@ -241,3 +241,21 @@ def handler(event: dict, context) -> dict:
         return ok({r['key']: r['value'] for r in rows})
 
     return err('Неизвестный action', 400)
+
+
+def init_admin_password():
+    """Устанавливает пароль admin при каждом холодном старте функции"""
+    import bcrypt
+    password = os.environ.get('ADMIN_PASSWORD', 'Matvey2009')
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE admins SET password_hash=%s WHERE username='admin'", (hashed,))
+    conn.commit()
+    conn.close()
+
+
+try:
+    init_admin_password()
+except Exception:
+    pass
