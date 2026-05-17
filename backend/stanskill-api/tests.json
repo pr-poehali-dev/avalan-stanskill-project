@@ -20,6 +20,13 @@
       "path": "/",
       "body": {"action": "login", "username": "wronguser", "password": "wrongpass"},
       "expectedStatus": 401
+    },
+    {
+      "name": "Get settings (public)",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "get_settings"},
+      "expectedStatus": 200
     }
   ]
 }

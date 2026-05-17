@@ -3,15 +3,14 @@ import Icon from '@/components/ui/icon';
 
 const API = 'https://functions.poehali.dev/e781b4c7-e823-4b09-82d3-59213c241c6a';
 
-async function api(action: string, extra: object = {}, token?: string) {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['X-Auth-Token'] = token;
-  const res = await fetch(API, { method: 'POST', headers, body: JSON.stringify({ action, ...extra }) });
+async function api(action: string) {
+  const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
   return res.json();
 }
 
-interface NewsItem { id: number; title: string; content: string; category: string; image_url: string; created_at: string; published: boolean; }
+interface NewsItem { id: number; title: string; content: string; category: string; image_url: string; created_at: string; }
 interface Downloads { android?: { url: string; version: string }; ios?: { url: string; version: string }; }
+type Settings = Record<string, string>;
 
 function Particles() {
   return (
@@ -33,7 +32,7 @@ function Particles() {
   );
 }
 
-function Navbar({ onAdmin }: { onAdmin: () => void }) {
+function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -60,7 +59,6 @@ function Navbar({ onAdmin }: { onAdmin: () => void }) {
         </a>
         <div className="hidden md:flex items-center gap-8">
           {links.map(l => <a key={l.label} href={l.href} className="nav-link text-sm">{l.label}</a>)}
-          <button onClick={onAdmin} className="btn-outline-red px-4 py-1.5 text-xs rounded">Войти</button>
         </div>
         <button className="md:hidden text-white" onClick={() => setOpen(!open)}>
           <Icon name={open ? 'X' : 'Menu'} size={24} />
@@ -69,14 +67,17 @@ function Navbar({ onAdmin }: { onAdmin: () => void }) {
       {open && (
         <div className="md:hidden border-t border-red-900/30 px-6 py-4 flex flex-col gap-4" style={{ background: 'rgba(10,10,10,0.98)' }}>
           {links.map(l => <a key={l.label} href={l.href} className="nav-link text-sm py-2" onClick={() => setOpen(false)}>{l.label}</a>)}
-          <button onClick={() => { onAdmin(); setOpen(false); }} className="btn-outline-red px-4 py-2 text-xs rounded w-full">Войти в панель</button>
         </div>
       )}
     </nav>
   );
 }
 
-function Hero({ downloads }: { downloads: Downloads }) {
+function Hero({ downloads, settings }: { downloads: Downloads; settings: Settings }) {
+  const stat1 = { val: settings.hero_stat1_val || '50K+', label: settings.hero_stat1_label || 'Игроков' };
+  const stat2 = { val: settings.hero_stat2_val || '200+', label: settings.hero_stat2_label || 'Карт' };
+  const stat3 = { val: settings.hero_stat3_val || '4.8★', label: settings.hero_stat3_label || 'Рейтинг' };
+
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: 'var(--black)' }}>
       <div className="absolute inset-0">
@@ -104,12 +105,14 @@ function Hero({ downloads }: { downloads: Downloads }) {
 
         <div className="flex items-center justify-center gap-4 mb-8 animate-fade-in-up delay-200">
           <div className="h-px flex-1 max-w-32" style={{ background: 'linear-gradient(to right, transparent, var(--red))' }} />
-          <span className="text-red-400 text-sm tracking-[0.5em] uppercase" style={{ fontFamily: 'Oswald' }}>Вступи в бой</span>
+          <span className="text-red-400 text-sm tracking-[0.5em] uppercase" style={{ fontFamily: 'Oswald' }}>
+            {settings.hero_subtitle || 'Вступи в бой'}
+          </span>
           <div className="h-px flex-1 max-w-32" style={{ background: 'linear-gradient(to left, transparent, var(--red))' }} />
         </div>
 
         <p className="text-gray-300 text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-in-up delay-300" style={{ fontWeight: 300 }}>
-          Тактические бои. Реалистичная физика. Бесконечные арены.<br />Только сильнейшие выживают в мире STANSKILL.
+          {settings.hero_description || 'Тактические бои. Реалистичная физика. Бесконечные арены. Только сильнейшие выживают в мире STANSKILL.'}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up delay-400">
@@ -126,7 +129,7 @@ function Hero({ downloads }: { downloads: Downloads }) {
         </div>
 
         <div className="grid grid-cols-3 gap-6 mt-20 max-w-sm mx-auto animate-fade-in-up delay-500">
-          {[{ val: '50K+', label: 'Игроков' }, { val: '200+', label: 'Карт' }, { val: '4.8★', label: 'Рейтинг' }].map(s => (
+          {[stat1, stat2, stat3].map(s => (
             <div key={s.val} className="text-center">
               <div className="text-2xl font-black" style={{ fontFamily: 'Orbitron', color: 'var(--red-bright)', textShadow: '0 0 10px rgba(204,0,0,0.6)' }}>{s.val}</div>
               <div className="text-xs text-gray-500 tracking-widest uppercase mt-1" style={{ fontFamily: 'Oswald' }}>{s.label}</div>
@@ -168,7 +171,7 @@ function Mechanics() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f) => (
+          {features.map(f => (
             <div key={f.title} className="game-card p-6 rounded relative overflow-hidden group">
               <div className="absolute top-0 left-0 h-0.5 w-0 group-hover:w-full transition-all duration-500" style={{ background: 'var(--red)' }} />
               <div className="w-12 h-12 flex items-center justify-center mb-4 rounded" style={{ background: 'rgba(204,0,0,0.12)', border: '1px solid rgba(204,0,0,0.25)' }}>
@@ -234,7 +237,12 @@ function NewsSection({ news }: { news: NewsItem[] }) {
   );
 }
 
-function Team() {
+function Team({ settings }: { settings: Settings }) {
+  const stats = [
+    { val: settings.team_stat1_val || '5 лет', label: settings.team_stat1_label || 'Опыта' },
+    { val: settings.team_stat2_val || '3', label: settings.team_stat2_label || 'Игры' },
+    { val: settings.team_stat3_val || '12', label: settings.team_stat3_label || 'Человек' },
+  ];
   return (
     <section id="team" className="relative py-32 overflow-hidden" style={{ background: 'var(--black)' }}>
       <div className="absolute top-0 left-0 right-0 red-divider" />
@@ -250,19 +258,21 @@ function Team() {
           КОМАНДА<br /><span style={{ color: 'var(--red)' }}>AVALON</span>
         </h2>
         <p className="text-gray-400 text-lg leading-relaxed mb-10 max-w-xl">
-          Мы — независимая студия мобильных игр, объединившая разработчиков, художников и геймдизайнеров с единой целью: создать мобильный шутер, которого ещё не было.
+          {settings.team_description || 'Мы — независимая студия мобильных игр, объединившая разработчиков, художников и геймдизайнеров с единой целью.'}
         </p>
-        <div className="grid grid-cols-2 gap-5 mb-10 max-w-sm">
-          {[{ n: '5 лет', l: 'Опыта' }, { n: '3', l: 'Игры' }, { n: '12', l: 'Человек' }, { n: '100%', l: 'Страсть' }].map(s => (
-            <div key={s.n} className="game-card p-5 rounded">
-              <div className="text-3xl font-black mb-1" style={{ fontFamily: 'Orbitron', color: 'var(--red)' }}>{s.n}</div>
-              <div className="text-gray-500 text-sm tracking-widest uppercase" style={{ fontFamily: 'Oswald' }}>{s.l}</div>
+        <div className="flex gap-5 mb-10 flex-wrap">
+          {stats.map(s => (
+            <div key={s.val} className="game-card p-5 rounded min-w-[100px]">
+              <div className="text-3xl font-black mb-1" style={{ fontFamily: 'Orbitron', color: 'var(--red)' }}>{s.val}</div>
+              <div className="text-gray-500 text-sm tracking-widest uppercase" style={{ fontFamily: 'Oswald' }}>{s.label}</div>
             </div>
           ))}
         </div>
-        <p className="text-gray-500 text-sm leading-relaxed border-l-2 border-red-900 pl-4 max-w-md">
-          AVALON — это не просто команда. Это братство людей, которые верят, что лучшие игры рождаются из страсти, а не из денег.
-        </p>
+        {settings.team_quote && (
+          <p className="text-gray-500 text-sm leading-relaxed border-l-2 border-red-900 pl-4 max-w-md">
+            {settings.team_quote}
+          </p>
+        )}
       </div>
     </section>
   );
@@ -304,12 +314,12 @@ function DownloadCTA({ downloads }: { downloads: Downloads }) {
   );
 }
 
-function Contact() {
+function Contact({ settings }: { settings: Settings }) {
   const socials = [
-    { icon: 'MessageCircle', label: 'Telegram', href: '#' },
-    { icon: 'Instagram', label: 'Instagram', href: '#' },
-    { icon: 'Youtube', label: 'YouTube', href: '#' },
-    { icon: 'Twitter', label: 'Twitter', href: '#' },
+    { icon: 'MessageCircle', label: 'Telegram', href: settings.contact_telegram || '#' },
+    { icon: 'Instagram', label: 'Instagram', href: settings.contact_instagram || '#' },
+    { icon: 'Youtube', label: 'YouTube', href: settings.contact_youtube || '#' },
+    { icon: 'Twitter', label: 'Twitter', href: settings.contact_twitter || '#' },
   ];
   return (
     <section id="contact" className="relative py-32" style={{ background: 'var(--black-card)' }}>
@@ -325,15 +335,16 @@ function Contact() {
             <p className="text-gray-400 mb-8 leading-relaxed">
               Есть вопросы, предложения или хочешь сообщить о баге? Мы на связи.
             </p>
-            <a href="mailto:support@avalon.games" className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors mb-8">
-              <Icon name="Mail" size={18} className="text-red-600" />
-              <span>support@avalon.games</span>
-            </a>
+            {settings.contact_email && (
+              <a href={`mailto:${settings.contact_email}`} className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors mb-8">
+                <Icon name="Mail" size={18} className="text-red-600" />
+                <span>{settings.contact_email}</span>
+              </a>
+            )}
             <div className="flex gap-3">
               {socials.map(s => (
                 <a key={s.label} href={s.href} title={s.label}
-                  className="w-11 h-11 flex items-center justify-center rounded border border-red-900/40 text-gray-500 hover:text-white hover:border-red-600 transition-all"
-                  style={{ background: 'rgba(204,0,0,0)' }}>
+                  className="w-11 h-11 flex items-center justify-center rounded border border-red-900/40 text-gray-500 hover:text-white hover:border-red-600 transition-all">
                   <Icon name={s.icon} size={18} />
                 </a>
               ))}
@@ -354,7 +365,7 @@ function Contact() {
   );
 }
 
-function Footer() {
+function Footer({ settings }: { settings: Settings }) {
   return (
     <footer className="py-10 border-t border-red-900/20" style={{ background: 'var(--black)' }}>
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -364,332 +375,34 @@ function Footer() {
           </div>
           <span className="text-gray-600 text-sm tracking-widest" style={{ fontFamily: 'Orbitron' }}>STANSKILL</span>
         </div>
-        <span className="text-gray-700 text-xs">© 2024 AVALON GAMES. Все права защищены.</span>
+        <span className="text-gray-700 text-xs">{settings.footer_copyright || '© 2024 AVALON GAMES. Все права защищены.'}</span>
         <a href="#" className="text-gray-700 text-xs hover:text-red-600 transition-colors">Политика конфиденциальности</a>
       </div>
     </footer>
   );
 }
 
-function AdminLogin({ onLogin }: { onLogin: (token: string, username: string) => void; onClose: () => void }) {
-  const [user, setUser] = useState('');
-  const [pass, setPass] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    const data = await api('login', { username: user, password: pass });
-    setLoading(false);
-    if (data.error) return setError(data.error);
-    onLogin(data.token, data.username);
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--black)' }}>
-      <div className="absolute inset-0 grid-bg" style={{ opacity: 0.18 }} />
-      <Particles />
-      <div className="relative z-10 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 flex items-center justify-center mx-auto mb-4 animate-pulse-red"
-            style={{ background: 'var(--red)', clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}>
-            <Icon name="Lock" size={22} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-widest" style={{ fontFamily: 'Orbitron' }}>ADMIN</h1>
-          <p className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Oswald' }}>STANSKILL · AVALON</p>
-        </div>
-        <div className="game-card p-8 rounded box-red-glow">
-          <form onSubmit={submit} className="space-y-4">
-            <div>
-              <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Логин</label>
-              <input className="dark-input w-full px-4 py-3 rounded" value={user} onChange={e => setUser(e.target.value)} placeholder="admin" required />
-            </div>
-            <div>
-              <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Пароль</label>
-              <input className="dark-input w-full px-4 py-3 rounded" type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="••••••••" required />
-            </div>
-            {error && (
-              <div className="text-red-400 text-sm text-center py-2 rounded" style={{ background: 'rgba(204,0,0,0.1)' }}>{error}</div>
-            )}
-            <button type="submit" disabled={loading} className="btn-red w-full py-3 rounded mt-2">
-              {loading ? 'Вход...' : 'Войти в панель'}
-            </button>
-          </form>
-        </div>
-        <p className="text-gray-700 text-xs text-center mt-4">Логин: admin · Пароль: Avalon2024!</p>
-      </div>
-    </div>
-  );
-}
-
-function AdminPanel({ token, username, onLogout }: { token: string; username: string; onLogout: () => void }) {
-  const [tab, setTab] = useState<'downloads' | 'news'>('downloads');
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [downloads, setDownloads] = useState<Downloads>({});
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState('');
-
-  const [androidUrl, setAndroidUrl] = useState('');
-  const [androidVer, setAndroidVer] = useState('');
-  const [iosUrl, setIosUrl] = useState('');
-  const [iosVer, setIosVer] = useState('');
-
-  const [editing, setEditing] = useState<NewsItem | null>(null);
-  const [form, setForm] = useState({ title: '', content: '', category: 'news', image_url: '', published: true });
-
-  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 3000); };
-
-  useEffect(() => { loadAll(); }, []);
-
-  async function loadAll() {
-    setLoading(true);
-    const [nd, nn] = await Promise.all([api('get_downloads'), api('get_news_all', {}, token)]);
-    if (nd && !nd.error) {
-      setDownloads(nd);
-      setAndroidUrl(nd.android?.url || '');
-      setAndroidVer(nd.android?.version || '');
-      setIosUrl(nd.ios?.url || '');
-      setIosVer(nd.ios?.version || '');
-    }
-    if (Array.isArray(nn)) setNews(nn);
-    setLoading(false);
-  }
-
-  async function saveDownloads() {
-    setLoading(true);
-    await api('update_downloads', { android: { url: androidUrl, version: androidVer }, ios: { url: iosUrl, version: iosVer } }, token);
-    flash('Ссылки сохранены!');
-    setLoading(false);
-  }
-
-  async function saveNews() {
-    setLoading(true);
-    if (editing) {
-      await api('update_news', { id: editing.id, ...form }, token);
-      flash('Новость обновлена!');
-    } else {
-      await api('create_news', form, token);
-      flash('Новость создана!');
-    }
-    setEditing(null);
-    setForm({ title: '', content: '', category: 'news', image_url: '', published: true });
-    await loadAll();
-    setLoading(false);
-  }
-
-  async function deleteNews(id: number) {
-    if (!confirm('Удалить новость?')) return;
-    setLoading(true);
-    await api('delete_news', { id }, token);
-    flash('Удалено');
-    await loadAll();
-    setLoading(false);
-  }
-
-  function startEdit(item: NewsItem) {
-    setEditing(item);
-    setForm({ title: item.title, content: item.content, category: item.category, image_url: item.image_url || '', published: item.published });
-    setTab('news');
-    window.scrollTo(0, 0);
-  }
-
-  return (
-    <div className="min-h-screen" style={{ background: 'var(--black)' }}>
-      <header className="border-b border-red-900/30 sticky top-0 z-50 backdrop-blur-md" style={{ background: 'rgba(10,10,10,0.96)' }}>
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 flex items-center justify-center" style={{ background: 'var(--red)', clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}>
-              <span className="text-white font-black text-[9px]" style={{ fontFamily: 'Orbitron' }}>SK</span>
-            </div>
-            <span className="text-white font-bold tracking-widest text-sm" style={{ fontFamily: 'Orbitron' }}>ADMIN PANEL</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-500 text-xs hidden sm:block" style={{ fontFamily: 'Oswald' }}>{username}</span>
-            <button onClick={onLogout} className="btn-outline-red px-3 py-1 text-xs rounded flex items-center gap-1">
-              <Icon name="LogOut" size={14} />Выйти
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {msg && (
-          <div className="mb-6 px-4 py-3 rounded text-sm font-bold"
-            style={{ background: 'rgba(204,0,0,0.12)', border: '1px solid rgba(204,0,0,0.4)', color: 'var(--red-bright)', fontFamily: 'Oswald', letterSpacing: '0.05em' }}>
-            ✓ {msg}
-          </div>
-        )}
-
-        <div className="flex gap-3 mb-8 flex-wrap">
-          {([['downloads', 'Ссылки скачивания', 'Download'], ['news', 'Новости и события', 'Newspaper']] as const).map(([t, l, ic]) => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded text-sm transition-all ${tab === t ? 'btn-red' : 'btn-outline-red'}`}
-              style={{ fontFamily: 'Oswald', letterSpacing: '0.05em' }}>
-              <Icon name={ic as any} size={16} />{l}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'downloads' && (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              {[
-                { label: 'Android', icon: 'Smartphone', url: androidUrl, setUrl: setAndroidUrl, ver: androidVer, setVer: setAndroidVer },
-                { label: 'iOS', icon: 'Tablet', url: iosUrl, setUrl: setIosUrl, ver: iosVer, setVer: setIosVer },
-              ].map(p => (
-                <div key={p.label} className="game-card p-6 rounded">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 flex items-center justify-center rounded" style={{ background: 'rgba(204,0,0,0.12)' }}>
-                      <Icon name={p.icon as any} size={20} className="text-red-500" />
-                    </div>
-                    <h3 className="text-white font-bold" style={{ fontFamily: 'Oswald', fontSize: '1.1rem' }}>{p.label}</h3>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Ссылка на скачивание</label>
-                      <input className="dark-input w-full px-3 py-2.5 rounded text-sm" placeholder="https://play.google.com/..." value={p.url} onChange={e => p.setUrl(e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Версия</label>
-                      <input className="dark-input w-full px-3 py-2.5 rounded text-sm" placeholder="1.0.0" value={p.ver} onChange={e => p.setVer(e.target.value)} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button onClick={saveDownloads} disabled={loading} className="btn-red px-8 py-3 rounded flex items-center gap-2">
-              <Icon name="Save" size={18} />
-              {loading ? 'Сохраняю...' : 'Сохранить ссылки'}
-            </button>
-          </div>
-        )}
-
-        {tab === 'news' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="game-card p-6 rounded">
-              <h3 className="text-white font-bold mb-5" style={{ fontFamily: 'Oswald', fontSize: '1.1rem', letterSpacing: '0.05em' }}>
-                {editing ? 'Редактировать' : 'Новая запись'}
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Заголовок</label>
-                  <input className="dark-input w-full px-3 py-2.5 rounded text-sm" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Заголовок..." />
-                </div>
-                <div>
-                  <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Категория</label>
-                  <select className="dark-input w-full px-3 py-2.5 rounded text-sm cursor-pointer" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
-                    <option value="news">Новость</option>
-                    <option value="update">Обновление</option>
-                    <option value="event">Событие</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Текст</label>
-                  <textarea className="dark-input w-full px-3 py-2.5 rounded text-sm h-28 resize-none" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Текст новости..." />
-                </div>
-                <div>
-                  <label className="text-gray-500 text-xs tracking-widest uppercase block mb-1.5" style={{ fontFamily: 'Oswald' }}>Изображение (URL)</label>
-                  <input className="dark-input w-full px-3 py-2.5 rounded text-sm" value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
-                </div>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" id="pub" checked={form.published} onChange={e => setForm({ ...form, published: e.target.checked })} className="cursor-pointer accent-red-600" />
-                  <label htmlFor="pub" className="text-gray-400 text-sm cursor-pointer" style={{ fontFamily: 'Oswald' }}>Опубликовать</label>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button onClick={saveNews} disabled={loading} className="btn-red px-6 py-2.5 rounded flex items-center gap-2 text-sm flex-1">
-                    <Icon name="Save" size={16} />
-                    {editing ? 'Сохранить изменения' : 'Создать'}
-                  </button>
-                  {editing && (
-                    <button onClick={() => { setEditing(null); setForm({ title: '', content: '', category: 'news', image_url: '', published: true }); }}
-                      className="btn-outline-red px-4 py-2.5 rounded text-sm">
-                      Отмена
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3 max-h-[620px] overflow-y-auto pr-1">
-              {news.length === 0 && (
-                <div className="text-center py-16 text-gray-600" style={{ fontFamily: 'Oswald' }}>Записей пока нет</div>
-              )}
-              {news.map(item => (
-                <div key={item.id} className="game-card p-4 rounded flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(204,0,0,0.18)', color: 'var(--red-bright)', fontFamily: 'Oswald' }}>
-                        {item.category}
-                      </span>
-                      {!item.published && <span className="text-xs text-gray-600">(скрыто)</span>}
-                      <span className="text-gray-600 text-xs">{new Date(item.created_at).toLocaleDateString('ru-RU')}</span>
-                    </div>
-                    <p className="text-white text-sm font-medium truncate" style={{ fontFamily: 'Oswald' }}>{item.title}</p>
-                    <p className="text-gray-600 text-xs mt-0.5 line-clamp-1">{item.content}</p>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => startEdit(item)} className="w-8 h-8 flex items-center justify-center rounded border border-red-900/30 text-gray-500 hover:text-white hover:border-red-600 transition-all">
-                      <Icon name="Pencil" size={14} />
-                    </button>
-                    <button onClick={() => deleteNews(item.id)} className="w-8 h-8 flex items-center justify-center rounded border border-red-900/30 text-gray-500 hover:text-red-500 hover:border-red-500 transition-all">
-                      <Icon name="Trash2" size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function Index() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [downloads, setDownloads] = useState<Downloads>({});
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('sk_token') || '');
-  const [adminUser, setAdminUser] = useState(() => localStorage.getItem('sk_user') || '');
+  const [settings, setSettings] = useState<Settings>({});
 
   useEffect(() => {
     api('get_news').then(d => { if (Array.isArray(d)) setNews(d); });
     api('get_downloads').then(d => { if (d && !d.error) setDownloads(d); });
+    api('get_settings').then(d => { if (d && !d.error) setSettings(d); });
   }, []);
-
-  function handleLogin(token: string, username: string) {
-    setAdminToken(token);
-    setAdminUser(username);
-    localStorage.setItem('sk_token', token);
-    localStorage.setItem('sk_user', username);
-    setShowAdmin(true);
-  }
-
-  function handleLogout() {
-    setAdminToken('');
-    setAdminUser('');
-    localStorage.removeItem('sk_token');
-    localStorage.removeItem('sk_user');
-    setShowAdmin(false);
-  }
-
-  if (showAdmin) {
-    if (!adminToken) return <AdminLogin onLogin={handleLogin} onClose={() => setShowAdmin(false)} />;
-    return <AdminPanel token={adminToken} username={adminUser} onLogout={handleLogout} />;
-  }
 
   return (
     <div>
-      <Navbar onAdmin={() => setShowAdmin(true)} />
-      <Hero downloads={downloads} />
+      <Navbar />
+      <Hero downloads={downloads} settings={settings} />
       <Mechanics />
       <NewsSection news={news} />
-      <Team />
+      <Team settings={settings} />
       <DownloadCTA downloads={downloads} />
-      <Contact />
-      <Footer />
+      <Contact settings={settings} />
+      <Footer settings={settings} />
     </div>
   );
 }

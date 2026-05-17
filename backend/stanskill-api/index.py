@@ -211,4 +211,33 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return ok({r['platform']: dict(r) for r in rows})
 
+    # GET_SETTINGS — публичный
+    if action == 'get_settings':
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT key, value FROM site_settings")
+        rows = cur.fetchall()
+        conn.close()
+        return ok({r['key']: r['value'] for r in rows})
+
+    # UPDATE_SETTINGS — только admin
+    if action == 'update_settings':
+        if not admin:
+            return err('Нет доступа', 401)
+        settings = body.get('settings', {})
+        if not settings:
+            return err('Нет данных')
+        conn = get_db()
+        cur = conn.cursor()
+        for key, value in settings.items():
+            cur.execute(
+                "INSERT INTO site_settings (key, value, updated_at) VALUES (%s, %s, NOW()) ON CONFLICT (key) DO UPDATE SET value=%s, updated_at=NOW()",
+                (key, str(value), str(value))
+            )
+        conn.commit()
+        cur.execute("SELECT key, value FROM site_settings")
+        rows = cur.fetchall()
+        conn.close()
+        return ok({r['key']: r['value'] for r in rows})
+
     return err('Неизвестный action', 400)
