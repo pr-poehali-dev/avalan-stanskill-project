@@ -1,0 +1,25 @@
+{
+  "tests": [
+    {
+      "name": "Get news (public)",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "get_news"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get downloads (public)",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "get_downloads"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Login with wrong credentials",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "login", "username": "wronguser", "password": "wrongpass"},
+      "expectedStatus": 401
+    }
+  ]
+}
